@@ -47,7 +47,6 @@
         .afternoon-row { background-color: #f0fdf4; }
         .night-row { background-color: #f0f9ff; }
 
-        /* 🖨️ PRINT OPTIMIZATION CSS STYLES */
         @media print {
             body { background: white !important; color: black !important; height: auto !important; overflow: visible !important; display: block !important; }
             .sidebar, .manual-tools, .top-bar, .clear-shift, .unstaffed-alert { display: none !important; }
@@ -174,6 +173,25 @@
         const shiftsOrder = ['daylight', 'afternoon', 'night'];
         let activeShifts = [];
 
+        // 💾 RUNS INSTANTLY ON LOAD: Reads database from LocalStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedEmployees = localStorage.getItem('store_employees');
+            const savedShifts = localStorage.getItem('store_shifts');
+            
+            if (savedEmployees) { employees = JSON.parse(savedEmployees); }
+            if (savedShifts) { activeShifts = JSON.parse(savedShifts); }
+            
+            updateRosterUI(); 
+            updateDropdownUI(); 
+            renderCalendarShifts();
+        });
+
+        // 💾 HELPER FUNCTION: Saves current application state to storage
+        function saveToLocalStorage() {
+            localStorage.setItem('store_employees', JSON.stringify(employees));
+            localStorage.setItem('store_shifts', JSON.stringify(activeShifts));
+        }
+
         function addEmployee() {
             const nameInput = document.getElementById('empName');
             const hoursInput = document.getElementById('empMaxHours');
@@ -194,6 +212,7 @@
             };
 
             employees.push({ id: employeeId, name: name, maxHours: maxHours, availability: defaultAvailability });
+            saveToLocalStorage();
             updateRosterUI(); 
             updateDropdownUI();
             
@@ -204,12 +223,16 @@
         function removeEmployee(id) {
             employees = employees.filter(emp => emp.id !== id);
             activeShifts = activeShifts.filter(shift => shift.employeeId !== id);
+            saveToLocalStorage();
             updateRosterUI(); updateDropdownUI(); renderCalendarShifts();
         }
 
         function toggleAvailability(empId, day, shift) {
             const emp = employees.find(e => e.id === empId);
-            if (emp) { emp.availability[day][shift] = !emp.availability[day][shift]; }
+            if (emp) { 
+                emp.availability[day][shift] = !emp.availability[day][shift]; 
+                saveToLocalStorage();
+            }
         }
 
         function calculateHours(employeeId) {
@@ -220,6 +243,7 @@
 
         function clearSchedule() {
             activeShifts = [];
+            saveToLocalStorage();
             renderCalendarShifts(); updateRosterUI();
         }
 
@@ -270,12 +294,14 @@
                 hours: 8 
             });
             
+            saveToLocalStorage();
             renderCalendarShifts(); 
             updateRosterUI();
         }
 
         function deleteShift(shiftId) {
             activeShifts = activeShifts.filter(s => s.id !== shiftId);
+            saveToLocalStorage();
             renderCalendarShifts(); updateRosterUI();
         }
 
@@ -355,6 +381,7 @@
                 }
             }
 
+            saveToLocalStorage();
             renderCalendarShifts(); 
             updateRosterUI();
         }
